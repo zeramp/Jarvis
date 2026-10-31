@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#010a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JARVIS">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<title>J.A.R.V.I.S</title>
+<style>
+:root{--bg:#010a0a;--panel:#041111;--teal:#00d4c4;--tealD:#007a72;--mid:#0a3a36;--text:#c8f5f0;--dim:#3a8a82;--red:#ff4d4d}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:ui-monospace,"SF Mono",Menlo,monospace;overflow:hidden}
+body{display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--mid);background:var(--panel)}
+.brand{font-size:18px;letter-spacing:3px;color:var(--teal)}.brand small{font-size:10px;color:var(--dim);letter-spacing:2px}
+.right{display:flex;gap:10px;align-items:center}
+.badge{font-size:10px;letter-spacing:1px;padding:4px 10px;border:1px solid var(--mid);border-radius:3px;color:var(--dim)}
+.badge.on{color:var(--teal);border-color:var(--tealD);text-shadow:0 0 8px var(--teal)}
+#gear{background:none;border:0;color:var(--dim);font-size:20px}
+main{flex:1;display:flex;flex-direction:column;align-items:center;min-height:0;padding:8px 0 0}
+#cam-wrap{position:relative;width:calc(100% - 32px);max-height:170px;border:1px solid var(--tealD);border-radius:8px;overflow:hidden;margin-bottom:6px}
+#cam-wrap.hidden,.hidden{display:none!important}
+#cam{width:100%;height:170px;object-fit:cover;display:block}
+.cam-live{position:absolute;top:8px;left:10px;font-size:10px;color:var(--red)}
+#flip{position:absolute;top:4px;right:6px;background:none;border:0;color:var(--teal);font-size:22px}
+#orb{width:100%;height:210px;flex:none}
+#status{font-size:12px;letter-spacing:3px;color:var(--dim);margin:2px 0 6px;text-align:center;padding:0 12px}
+#status.live{color:var(--teal)}#status.err{color:var(--red)}
+#acts{width:100%;padding:0 16px;display:flex;flex-direction:column;gap:6px}
+.act{display:block;text-align:center;text-decoration:none;color:var(--bg);background:var(--teal);font-weight:700;font-size:13px;padding:11px;border-radius:6px;letter-spacing:1px}
+#log{flex:1;width:100%;overflow-y:auto;padding:8px 16px;font-size:13px;line-height:1.45;min-height:0}
+.row{margin-bottom:8px;word-wrap:break-word}.u{color:var(--dim);font-weight:700}.j{color:var(--teal);font-weight:700}.t{color:var(--dim);font-size:11px}.s{color:var(--red);font-size:11px}
+footer{border-top:1px solid var(--mid);background:var(--panel);padding:10px 16px}
+.controls{display:flex;gap:10px;margin-bottom:10px}
+.ctl{flex:1;padding:11px;background:none;color:var(--dim);border:1px solid var(--mid);border-radius:6px;font:inherit;font-size:12px;letter-spacing:2px}
+.ctl.on{color:var(--teal);border-color:var(--tealD)}
+form{display:flex;gap:8px}
+#ti{flex:1;padding:10px;background:var(--bg);border:1px solid var(--mid);border-radius:6px;color:var(--text);font:inherit;font-size:16px}
+form button{background:none;border:0;color:var(--teal);font-size:28px;padding:0 6px}
+/* ayar / başlangıç ekranı */
+#setup{position:fixed;inset:0;background:var(--bg);z-index:10;overflow-y:auto;padding:max(24px,env(safe-area-inset-top)) 20px 30px}
+.box{max-width:420px;margin:0 auto}
+.box h1{color:var(--teal);letter-spacing:4px;font-size:20px;margin-bottom:6px}
+.box p{color:var(--dim);font-size:12px;line-height:1.5;margin-bottom:16px}
+.box label{display:block;color:var(--dim);font-size:11px;letter-spacing:1px;margin:14px 0 5px}
+.box input,.box select{width:100%;padding:12px;background:var(--panel);border:1px solid var(--mid);border-radius:6px;color:var(--text);font:inherit;font-size:16px}
+.box button.big{width:100%;margin-top:22px;padding:14px;background:var(--teal);color:var(--bg);border:0;border-radius:6px;font:inherit;font-weight:700;letter-spacing:3px;font-size:14px}
+.box button.sm{margin-top:14px;background:none;border:1px solid var(--mid);color:var(--dim);padding:9px;border-radius:6px;font:inherit;font-size:12px;width:100%}
+.box a{color:var(--teal);font-size:12px;display:inline-block;margin-top:10px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">J.A.R.V.I.S <small>WEB</small></div>
+  <div class="right"><span id="badge" class="badge">BAĞLANTI</span><button id="gear" aria-label="Ayarlar">⚙︎</button></div>
+</header>
+<main>
+  <div id="cam-wrap" class="hidden"><video id="cam" autoplay playsinline muted></video><span class="cam-live">● CAM LIVE</span><button id="flip" type="button">⟲</button></div>
+  <canvas id="orb"></canvas>
+  <div id="status">BAŞLAMAK İÇİN AYARLARI AÇ</div>
+  <div id="acts"></div>
+  <div id="log"></div>
+</main>
+<footer>
+  <div class="controls"><button id="btn-mic" class="ctl">🎙️ MIC</button><button id="btn-cam" class="ctl">📷 CAM</button></div>
+  <form id="tf"><input id="ti" type="text" placeholder="Yazılı komut gönder…" autocomplete="off"><button type="submit">➤</button></form>
+</footer>
+
+<div id="setup" class="hidden"><div class="box">
+  <h1>◈ J.A.R.V.I.S</h1>
+  <p>Gemini API anahtarını gir. Anahtar yalnızca bu telefonun tarayıcısında saklanır; ses ve metin doğrudan Google'a gider, aracı sunucu yok.</p>
+  <label>GEMINI API ANAHTARI (zorunlu)</label>
+  <input id="k-gem" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AIza…">
+  <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Ücretsiz anahtar al → aistudio.google.com/apikey</a>
+  <label>SES</label>
+  <select id="k-voice"><option>Charon</option><option>Puck</option><option>Kore</option><option>Fenrir</option><option>Aoede</option><option>Leda</option><option>Orus</option><option>Zephyr</option></select>
+  <label>VARSAYILAN ŞEHİR (hava durumu)</label>
+  <input id="k-city" type="text" placeholder="Istanbul">
+  <label>YOUTUBE API ANAHTARI (isteğe bağlı)</label>
+  <input id="k-yt" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <label>YOUTUBE KANAL HANDLE (isteğe bağlı)</label>
+  <input id="k-ythandle" type="text" autocapitalize="off" placeholder="@kanaladi">
+  <button class="big" id="go">BAŞLAT</button>
+  <button class="sm" id="clr">Hafızayı temizle</button>
+  <button class="sm hidden" id="close">Kapat</button>
+</div></div>
+
+<script>
+"use strict";
+const TOOLS = [{"name": "open_app", "description": "Bir uygulamayı açmak için ekrana dokunulabilir bir bağlantı çıkarır (Spotify, WhatsApp, Instagram, YouTube, Müzik, Haritalar, Notlar, Fotoğraflar, Mail, Mesajlar, Telefon, Takvim, Ayarlar vb.).", "parameters": {"type": "OBJECT", "properties": {"app_name": {"type": "STRING", "description": "Uygulama adı. Örn: 'Spotify', 'Ayarlar'"}}, "required": ["app_name"]}}, {"name": "sys_info", "description": "Saat, tarih ve ağ durumunu verir (tarayıcıda pil/depolama okunamaz).", "parameters": {"type": "OBJECT", "properties": {"query": {"type": "STRING", "description": "time | date | network | all"}}, "required": ["query"]}}, {"name": "get_weather", "description": "Anlik hava durumunu ozetler. Varsayilan konum Istanbul'dur. Kullanici hava durumunu, sicakligi veya yagmur durumunu sordugunda kullan.", "parameters": {"type": "OBJECT", "properties": {"location": {"type": "STRING", "description": "Sehir veya konum. Bos birakilirsa Istanbul kullanilir."}}}}, {"name": "add_calendar_event", "description": "Takvim etkinliği için .ics dosyası hazırlar; kullanıcı ekrandaki düğmeye dokunup Takvim'e ekler. Başlangıç tarihini gerçek tarih/saat olarak ver.", "parameters": {"type": "OBJECT", "properties": {"title": {"type": "STRING", "description": "Etkinlik basligi. Ornek: 'Disci Randevusu'"}, "start_iso": {"type": "STRING", "description": "Baslangic tarih/saat. ISO veya yyyy-MM-dd HH:mm formatinda."}, "end_iso": {"type": "STRING", "description": "Bitis tarih/saat. Opsiyonel."}, "location": {"type": "STRING", "description": "Etkinlik konumu. Opsiyonel."}, "notes": {"type": "STRING", "description": "Etkinlik notlari. Opsiyonel."}, "calendar_name": {"type": "STRING", "description": "Eklenecek takvim adi. Opsiyonel."}, "all_day": {"type": "BOOLEAN", "description": "true ise tum gun etkinligi olusturur."}}, "required": ["title", "start_iso"]}}, {"name": "add_reminder", "description": "Anımsatıcı için alarmlı takvim kaydı (.ics) hazırlar; kullanıcı ekrandaki düğmeye dokunup ekler. Göreli zamanları due_iso alanına gerçek tarih/saat olarak çevir.", "parameters": {"type": "OBJECT", "properties": {"title": {"type": "STRING", "description": "Animsatici basligi"}, "due_iso": {"type": "STRING", "description": "Opsiyonel tarih/saat. Ornek: 2026-04-13T09:00 veya tum gun icin 2026-04-13"}, "notes": {"type": "STRING", "description": "Opsiyonel not"}, "list_name": {"type": "STRING", "description": "Opsiyonel animsatici listesi"}, "priority": {"type": "STRING", "description": "low | medium | high"}, "all_day": {"type": "BOOLEAN", "description": "Tum gun animsatici ise true"}}, "required": ["title"]}}, {"name": "browser_control", "description": "Tarayıcıda URL açar, Google'da arama yapar veya YouTube'da ilk sonucu doğrudan oynatır.", "parameters": {"type": "OBJECT", "properties": {"action": {"type": "STRING", "description": "open_url | search | play_youtube"}, "url": {"type": "STRING", "description": "Açılacak URL (open_url için)"}, "query": {"type": "STRING", "description": "Arama sorgusu (search veya play_youtube için)"}}, "required": ["action"]}}, {"name": "toggle_webcam", "description": "Gerçek zamanlı webcam akışını başlatır veya durdurur. Akış aktifken model sürekli kamera görüntüsü alır — 'bak', 'gör', 'göster', 'kameraya bak', 'önümdekileri anlat', 'ne görüyorsun' gibi komutlarda 'start' kullan. 'kamerayı kapat', 'artık bakma' gibi durumlarda 'stop' kullan.", "parameters": {"type": "OBJECT", "properties": {"action": {"type": "STRING", "description": "start — akışı başlat  |  stop — akışı durdur"}}, "required": ["action"]}}, {"name": "play_media", "description": "YouTube, Spotify veya Apple Music'te arama bağlantısı hazırlar; kullanıcı dokunup açar.", "parameters": {"type": "OBJECT", "properties": {"query": {"type": "STRING", "description": "Şarkı, sanatçı, albüm veya video arama ifadesi"}, "provider": {"type": "STRING", "description": "auto | youtube | spotify | apple_music"}, "autoplay": {"type": "BOOLEAN", "description": "true ise mümkünse doğrudan oynatır"}}, "required": ["query"]}}, {"name": "get_youtube_channel_report", "description": "YouTube kanalinin public istatistiklerini ve son videolarin performansini raporlar. Kullanici kanal istatistiklerini, abone sayisini, son videolarini, buyume hizini veya YouTube analizini sordugunda kullan. Bu arac Studio yerine public YouTube Data API verisini kullanir.", "parameters": {"type": "OBJECT", "properties": {"query": {"type": "STRING", "description": "Dogal dilde analiz istegi. Ornek: 'YouTube istatistiklerim nasil', 'son videolarimi analiz et', 'kanal buyumemi ozetle'"}, "handle": {"type": "STRING", "description": "Opsiyonel kanal handle'i, kanal linki veya kanal ID'si. Bos birakilirsa ayarlardaki youtube_channel_handle kullanilir."}, "video_limit": {"type": "NUMBER", "description": "Analize dahil edilecek son video sayisi. Varsayilan 6."}}, "required": ["query"]}}, {"name": "save_memory", "description": "Kullanıcı hakkında önemli bilgiyi kalıcı belleğe kaydeder. İsim, tercihler, projeler vb. duyunca sessizce çağır.", "parameters": {"type": "OBJECT", "properties": {"category": {"type": "STRING", "description": "identity | preferences | projects | notes"}, "key": {"type": "STRING", "description": "Kısa anahtar (örn. 'name')"}, "value": {"type": "STRING", "description": "Değer (İngilizce)"}}, "required": ["category", "key", "value"]}}, {"name": "delete_memory", "description": "Kalici hafizadaki bir kaydi siler. Kullanici 'bunu hafizandan kaldir', 'unut', 'sil' gibi bir sey derse kullan. Mumkunse category ve key ile sil; emin degilsen match_text ile ilgili kaydi bulup kaldir.", "parameters": {"type": "OBJECT", "properties": {"category": {"type": "STRING", "description": "Kaydin kategorisi. Ornek: notes | identity | preferences | projects"}, "key": {"type": "STRING", "description": "Silinecek anahtar. Ornek: claude_limit_refresh"}, "match_text": {"type": "STRING", "description": "Kaydi bulmak icin kullanilacak dogal dil parcasi. Ornek: 'claude ai limit yenilenmesi'"}}}}, {"name": "send_whatsapp_message", "description": "WhatsApp mesaj taslağı için dokunulabilir bağlantı hazırlar (otomatik gönderilmez). Kişi numarası kayıtlı WhatsApp kişilerinden bulunur; yoksa phone_number ver.", "parameters": {"type": "OBJECT", "properties": {"recipient_name": {"type": "STRING", "description": "Kişi adı. Örn: 'Anne', 'Ahmet', 'Ece'"}, "phone_number": {"type": "STRING", "description": "Uluslararası telefon numarası. Örn: +905551112233"}, "message": {"type": "STRING", "description": "Gönderilecek mesaj içeriği"}}, "required": ["message"]}}, {"name": "save_whatsapp_contact", "description": "Sık kullanılan bir WhatsApp kişisini adı ve telefon numarasıyla kalıcı belleğe kaydeder. Kullanıcı bir kişiyi 'annem', 'Ahmet', 'iş ortağım' gibi tekrar kullanılacak şekilde tanımladığında kullan.", "parameters": {"type": "OBJECT", "properties": {"display_name": {"type": "STRING", "description": "Kaydedilecek kişi adı. Örn: 'Annem', 'Ahmet'"}, "phone_number": {"type": "STRING", "description": "Uluslararası telefon numarası. Örn: +905551112233"}, "aliases": {"type": "STRING", "description": "Virgülle ayrılmış alternatif hitaplar. Örn: 'anne, annem, mom'"}}, "required": ["display_name", "phone_number"]}}];
+const MODEL = "models/gemini-2.5-flash-native-audio-latest";
+const $ = id => document.getElementById(id);
+const LS = {
+  get:(k,d="")=>{try{const v=localStorage.getItem(k);return v===null?d:v}catch{return d}},
+  set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}
+};
+
+/* ───────── Durum ───────── */
+const S = {ws:null,ready:false,want:false,micOn:false,camOn:false,facing:"environment",
+  ctxIn:null,ctxOut:null,node:null,micStream:null,camStream:null,camTimer:null,
+  nextT:0,srcs:[],outLevel:0,speaking:false,delay:2000,rt:null,inBuf:"",outBuf:"",fatal:false,wake:null};
+
+/* ───────── Arayüz yardımcıları ───────── */
+function setStatus(t,cls=""){const e=$("status");e.textContent=t;e.className=cls}
+function addLog(kind,text){
+  const r=document.createElement("div");r.className="row";
+  const lab={u:"SEN ",j:"JARVIS ",t:"⚙ ",s:""}[kind]||"";
+  if(kind==="u"||kind==="j"){const b=document.createElement("span");b.className=kind;b.textContent=lab;r.appendChild(b);r.appendChild(document.createTextNode(text))}
+  else{r.className="row "+kind;r.textContent=lab+text}
+  const l=$("log");l.appendChild(r);l.scrollTop=l.scrollHeight;
+  while(l.children.length>150)l.removeChild(l.firstChild);
+}
+function addAction(label,href,opts={}){
+  const a=document.createElement("a");a.className="act";a.textContent=label;a.href=href;
+  if(opts.download)a.download=opts.download;
+  if(!opts.same)a.target="_blank";a.rel="noopener";
+  a.addEventListener("click",()=>setTimeout(()=>a.remove(),400));
+  const box=$("acts");box.appendChild(a);
+  while(box.children.length>3)box.removeChild(box.firstChild);
+}
+
+/* ───────── Hafıza (memory_manager.py portu) ───────── */
+const norm=s=>String(s||"").toLocaleLowerCase("tr").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ı/g,"i").trim().replace(/\s+/g," ");
+const loadMem=()=>{try{return JSON.parse(LS.get("jarvis_mem","{}"))||{}}catch{return {}}};
+const saveMem=m=>LS.set("jarvis_mem",JSON.stringify(m));
+const valText=v=>v&&typeof v==="object"?(v.value!==undefined?String(v.value):JSON.stringify(v)):String(v);
+function memMatch(needle,cat,key,val){
+  const hay=[norm(cat),norm(key),norm(valText(val))];
+  if(hay.some(h=>h.includes(needle)))return true;
+  const toks=needle.split(/[^a-z0-9]+/).filter(t=>t.length>=3);
+  if(!toks.length)return false;
+  const et=hay.flatMap(h=>h.split(/[^a-z0-9]+/).filter(Boolean));
+  const m=toks.filter(t=>et.some(e=>e.includes(t)||t.includes(e))).length;
+  return toks.length===1?m===1:m>=Math.min(2,toks.length);
+}
+function deleteMem(cat,key,match){
+  const mem=loadMem();if(!Object.keys(mem).length)return "Hafızada silinecek bir kayıt yok.";
+  if(cat&&key){if(mem[cat]&&mem[cat][key]!==undefined){delete mem[cat][key];if(!Object.keys(mem[cat]).length)delete mem[cat];saveMem(mem);return `${cat}/${key} hafızadan kaldırıldı.`}return "Bu hafıza kaydını bulamadım."}
+  const needle=norm(match||key);if(!needle)return "Silmek için category/key veya match_text gerekli.";
+  for(const [c,b] of Object.entries(mem)){for(const [k,v] of Object.entries(b||{})){if(memMatch(needle,c,k,v)){delete b[k];if(!Object.keys(b).length)delete mem[c];saveMem(mem);return `${c}/${k} hafızadan kaldırıldı.`}}}
+  return "Eşleştirebildiğim bir hafıza kaydı bulamadım.";
+}
+function memForPrompt(){
+  const mem=loadMem();const lines=[];
+  for(const [c,b] of Object.entries(mem))for(const [k,v] of Object.entries(b||{})){
+    if(c==="whatsapp_contacts"&&v&&typeof v==="object"){const al=(v.aliases||[]).length?` aliases=${v.aliases.join(", ")}`:"";lines.push(`  ${c}/${v.display_name||k}: ${v.value||""}${al}`)}
+    else lines.push(`  ${c}/${k}: ${valText(v)}`);
+  }
+  return lines.length?"[KULLANICI HAKKINDA BİLGİLER]\n"+lines.join("\n"):"";
+}
+function waNumber(name){
+  const n=norm(name);if(!n)return null;
+  for(const [k,v] of Object.entries(loadMem().whatsapp_contacts||{})){
+    const names=[norm(k),norm(v.display_name),...(v.aliases||[]).map(norm)].filter(Boolean);
+    if(names.some(x=>x===n||x.includes(n)||n.includes(x)))return v.value;
+  }return null;
+}
+function normPhone(raw){let d=String(raw||"").replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);
+  if(d.length===11&&d[0]==="0")d="9"+d;else if(d.length===10&&d[0]==="5")d="90"+d;return d}
+
+/* ───────── Sistem talimatı ───────── */
+const BASE_PROMPT=`Sen JARVIS'sin — telefonun tarayıcısında çalışan kişisel AI asistanı.
+
+KURALLAR:
+- Türkçe konuş (kullanıcı başka dil kullanıyorsa o dilde yanıt ver)
+- Kısa, net ve etkili ol — gereksiz tekrar yapma
+- Araçları kullanarak görevleri tamamla, asla taklit etme veya hayal etme
+- Kullanıcı hakkında önemli bilgi duyarsan save_memory aracını sessizce çağır
+- Kullanıcı bir hafıza kaydını artık istemediğini söylerse delete_memory kullan
+- Sistem hatalarını sesli olarak ilet
+- Tarayıcıdan telefon uygulamaları otomatik kontrol edilemez: open_app, browser_control, play_media, send_whatsapp_message, add_calendar_event ve add_reminder ekranda DOKUNULABİLİR bir düğme çıkarır. Bu araçlardan sonra kullanıcıya kısaca "Ekrandaki düğmeye dokun" de; işlemin tamamlandığını iddia etme
+- WhatsApp: kişi için send_whatsapp_message'ı recipient_name ile çağır; numara kayıtlı değilse kullanıcıdan numarayı iste ve save_whatsapp_contact ile kaydet. Mesaj otomatik gönderilmez, kullanıcı WhatsApp'ta Gönder'e basar
+- Takvim/anımsatıcı: göreli zamanları şu anki tarih/saate göre gerçek tarih/saate çevir. Takvimi OKUYAMAZ veya etkinlik SİLEMEZSİN; istenirse bunun tarayıcıda mümkün olmadığını söyle
+- "bak", "gör", "kameraya bak", "ne görüyorsun" denirse toggle_webcam(action="start"); "kamerayı kapat" denirse "stop"
+- Terminal komutu, ekran analizi, pil/depolama bilgisi bu sürümde YOK; istenirse masaüstü JARVIS'e özel olduğunu söyle
+
+ÖRNEKLER:
+- "İstanbul'da hava nasıl?" → get_weather(location="Istanbul")
+- "Yarın 14:00'e dişçi randevusu ekle" → add_calendar_event(title="Dişçi Randevusu", start_iso="<yarın 14:00 gerçek tarih/saat>")
+- "Yarın sabah 9'da dişçiyi hatırlat" → add_reminder(title="Dişçi", due_iso="<yarın 09:00 gerçek tarih/saat>")
+- "YouTube'dan Blinding Lights aç" → browser_control("play_youtube", query="The Weeknd Blinding Lights")
+- "Spotify'da Sezen Aksu Gülümse çal" → play_media(query="Sezen Aksu Gülümse", provider="spotify")
+- "Anneme WhatsApp'tan iyi geceler yaz" → send_whatsapp_message(recipient_name="Annem", message="İyi geceler")`;
+
+function buildPrompt(){
+  const now=new Date().toLocaleString("tr-TR",{weekday:"long",day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  return `[ŞU ANKİ ZAMAN]\n${now}\n\n`+(memForPrompt()?memForPrompt()+"\n\n":"")+BASE_PROMPT;
+}
+
+/* ───────── Gemini Live bağlantısı ───────── */
+function connect(){
+  clearTimeout(S.rt);
+  const key=LS.get("gemini_key").trim();
+  if(!key){openSetup();return}
+  S.want=true;S.fatal=false;
+  try{S.ws&&S.ws.close()}catch{}
+  setStatus("BAĞLANIYOR…");
+  const ws=new WebSocket("wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key="+encodeURIComponent(key));
+  S.ws=ws;
+  ws.onopen=()=>{
+    ws.send(JSON.stringify({setup:{model:MODEL,
+      generationConfig:{responseModalities:["AUDIO"],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:LS.get("voice","Charon")}}}},
+      systemInstruction:{parts:[{text:buildPrompt()}]},
+      tools:[{functionDeclarations:TOOLS}],
+      inputAudioTranscription:{},outputAudioTranscription:{}}}));
+  };
+  ws.onmessage=async ev=>{
+    let txt=ev.data;if(txt instanceof Blob)txt=await txt.text();
+    let o;try{o=JSON.parse(txt)}catch{return}
+    handle(o);
+  };
+  ws.onclose=ev=>{
+    if(S.ws!==ws)return;
+    S.ready=false;$("badge").className="badge";flushPlayback();
+    const r=(ev.reason||"").toLowerCase();
+    if(/api key|invalid|permission|not valid/.test(r)){S.fatal=true;S.want=false;
+      setStatus("API ANAHTARI GEÇERSİZ","err");addLog("s","API anahtarı geçersiz görünüyor. ⚙︎ ayarlardan kontrol et. ("+ev.reason+")");return}
+    if(!S.want)return;
+    setStatus("BAĞLANTI KOPTU — YENİDEN DENİYOR…","err");
+    S.delay=Math.min(S.delay*1.6,15000);S.rt=setTimeout(connect,S.delay);
+  };
+  ws.onerror=()=>{};
+}
+function sendJ(o){if(S.ws&&S.ws.readyState===1)S.ws.send(JSON.stringify(o))}
+
+function handle(o){
+  if(o.setupComplete){S.ready=true;S.delay=2000;$("badge").className="badge on";
+    setStatus(S.micOn?"DİNLİYORUM":"HAZIR","live");return}
+  const sc=o.serverContent;
+  if(sc){
+    if(sc.interrupted)flushPlayback();
+    for(const p of (sc.modelTurn&&sc.modelTurn.parts)||[]){
+      if(p.inlineData&&p.inlineData.data)playChunk(b64ToBuf(p.inlineData.data));
+    }
+    if(sc.outputTranscription&&sc.outputTranscription.text)S.outBuf+=sc.outputTranscription.text;
+    if(sc.inputTranscription&&sc.inputTranscription.text)S.inBuf+=sc.inputTranscription.text;
+    if(sc.turnComplete){
+      const u=S.inBuf.trim(),j=S.outBuf.trim();S.inBuf=S.outBuf="";
+      if(u)addLog("u",u);if(j)addLog("j",j);
+      setStatus(S.micOn?"DİNLİYORUM":"HAZIR","live");
+    }
+  }
+  if(o.toolCall&&o.toolCall.functionCalls)runTools(o.toolCall.functionCalls);
+  if(o.goAway&&S.want)connect();
+}
+
+async function runTools(calls){
+  const res=[];
+  for(const c of calls){
+    addLog("t",c.name);setStatus("ÇALIŞIYOR: "+c.name,"live");
+    let r;try{r=await tool(c.name,c.args||{})}catch(e){r="Hata: "+e.message}
+    res.push({id:c.id,name:c.name,response:{result:String(r)}});
+  }
+  sendJ({toolResponse:{functionResponses:res}});
+}
+
+/* ───────── Araçlar ───────── */
+const s=v=>String(v==null?"":v).trim();
+const APPS=[
+  [["spotify"],"spotify://"],[["whatsapp"],"whatsapp://"],[["instagram"],"instagram://app"],[["youtube"],"youtube://"],
+  [["muzik","music","apple music"],"music://"],[["harita","haritalar","maps"],"maps://"],[["telegram"],"tg://"],
+  [["notlar","notes","not"],"mobilenotes://"],[["fotograflar","fotograf","photos"],"photos-redirect://"],
+  [["mail","posta","e-posta"],"message://"],[["mesajlar","messages","sms"],"sms://"],[["telefon","phone"],"tel://"],
+  [["takvim","calendar"],"calshow://"],[["facetime"],"facetime://"],[["ayarlar","settings"],"App-Prefs:"],
+  [["safari","tarayici","internet"],"https://www.google.com"],[["netflix"],"nflx://"],[["twitter","x"],"twitter://"]
+];
+function icsDate(d){const p=n=>String(n).padStart(2,"0");return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}T${p(d.getHours())}${p(d.getMinutes())}00`}
+function parseDate(x){
+  const m=s(x).match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);if(!m)return null;
+  return {d:new Date(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0)),hasTime:m[4]!==undefined};
+}
+const icsEsc=t=>String(t).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+function makeICS({title,start,end,allDay,loc,notes,alarm}){
+  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//JARVIS//TR","BEGIN:VEVENT",
+    "UID:"+Date.now()+Math.random().toString(36).slice(2)+"@jarvis","DTSTAMP:"+new Date().toISOString().replace(/[-:]|\.\d+/g,"")];
+  if(allDay){const e=new Date(end||start);e.setDate(e.getDate()+1);
+    L.push("DTSTART;VALUE=DATE:"+icsDate(start).slice(0,8),"DTEND;VALUE=DATE:"+icsDate(e).slice(0,8))}
+  else L.push("DTSTART:"+icsDate(start),"DTEND:"+icsDate(end));
+  L.push("SUMMARY:"+icsEsc(title));
+  if(loc)L.push("LOCATION:"+icsEsc(loc));if(notes)L.push("DESCRIPTION:"+icsEsc(notes));
+  if(alarm)L.push("BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+icsEsc(title),"TRIGGER:PT0M","END:VALARM");
+  L.push("END:VEVENT","END:VCALENDAR");
+  return URL.createObjectURL(new Blob([L.join("\r\n")],{type:"text/calendar;charset=utf-8"}));
+}
+const fmt=d=>d.toLocaleString("tr-TR",{day:"numeric",month:"long",weekday:"long",hour:"2-digit",minute:"2-digit"});
+
+async function tool(name,a){
+  switch(name){
+  case "open_app":{
+    const n=norm(a.app_name);const hit=APPS.find(([ns])=>ns.includes(n));
+    if(!hit)return `"${a.app_name}" için bağlantım yok. Spotify, WhatsApp, Instagram, YouTube, Müzik, Haritalar, Notlar, Fotoğraflar, Mail, Mesajlar, Telefon, Takvim, Safari açılabilir.`;
+    addAction("▶ "+a.app_name.toUpperCase()+" AÇ",hit[1],{same:true});
+    return `${a.app_name} için ekranda bir düğme çıktı; kullanıcının dokunması gerekiyor.`;}
+  case "sys_info":{
+    const q=s(a.query).toLowerCase();const out=[];
+    if(!q||q==="all"||/time|saat|date|tarih/.test(q))out.push("Şu an: "+new Date().toLocaleString("tr-TR",{weekday:"long",day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"}));
+    if(!q||q==="all"||/net|ag|ağ/.test(q))out.push("Ağ: "+(navigator.onLine?"çevrimiçi":"çevrimdışı"));
+    if(/batt|pil|disk|cpu|ram/.test(q))out.push("Pil, depolama, CPU ve RAM tarayıcıdan okunamaz.");
+    return out.join(". ")+".";}
+  case "get_weather":{
+    const loc=s(a.location)||LS.get("city","Istanbul")||"Istanbul";
+    try{const r=await fetch(`https://wttr.in/${encodeURIComponent(loc)}?format=j1`);const j=await r.json();
+      const c=j.current_condition[0];const p=[`${c.temp_C} derece`];
+      const d=c.weatherDesc&&c.weatherDesc[0]&&c.weatherDesc[0].value;if(d)p.push(d.toLowerCase());
+      if(c.FeelsLikeC!==c.temp_C)p.push(`hissedilen ${c.FeelsLikeC} derece`);p.push(`nem yüzde ${c.humidity}`);
+      return `${loc} için hava durumu: ${p.join(", ")}.`}catch{return "Hava durumu bilgisi şu anda alınamadı."}}
+  case "add_calendar_event":{
+    const st=parseDate(a.start_iso);if(!s(a.title)||!st)return "Başlık ve geçerli bir başlangıç tarihi gerekli.";
+    const en=parseDate(a.end_iso);const allDay=a.all_day===true;
+    const end=en?en.d:new Date(st.d.getTime()+3600e3);
+    const url=makeICS({title:a.title,start:st.d,end,allDay,loc:a.location,notes:a.notes});
+    addAction("📅 TAKVİME EKLE: "+a.title,url,{download:"etkinlik.ics"});
+    return `"${a.title}" (${fmt(st.d)}) için takvim düğmesi ekranda; kullanıcı dokunup onaylamalı.`;}
+  case "add_reminder":{
+    if(!s(a.title))return "Anımsatıcı başlığı gerekli.";
+    const dd=parseDate(a.due_iso)||{d:new Date(Date.now()+3600e3),hasTime:true};
+    const url=makeICS({title:"⏰ "+a.title,start:dd.d,end:new Date(dd.d.getTime()+15*60e3),allDay:!dd.hasTime&&a.all_day===true,notes:a.notes,alarm:true});
+    addAction("⏰ ANIMSATICI EKLE: "+a.title,url,{download:"animsatici.ics"});
+    return `"${a.title}" anımsatıcısı (alarmlı takvim kaydı, ${fmt(dd.d)}) için düğme ekranda; kullanıcı dokunup onaylamalı.`;}
+  case "browser_control":{
+    const act=s(a.action).toLowerCase();
+    if(act==="open_url"){let u=s(a.url);if(!u)return "URL belirtilmedi.";if(!/^https?:/i.test(u))u="https://"+u;
+      addAction("🌐 AÇ: "+u.replace(/^https?:\/\//,"").slice(0,32),u);return "Bağlantı düğmesi ekranda.";}
+    if(act==="search"){addAction("🔎 ARA: "+s(a.query),"https://www.google.com/search?q="+encodeURIComponent(s(a.query)));return "Arama düğmesi ekranda.";}
+    if(act==="play_youtube")return await youtube(s(a.query));
+    return "Bilinmeyen işlem. open_url | search | play_youtube kullan.";}
+  case "play_media":{
+    const q=s(a.query);if(!q)return "Ne açacağımı söylemedin.";const p=s(a.provider).toLowerCase();
+    if(p==="spotify"){addAction("🎵 SPOTIFY: "+q,"spotify:search:"+encodeURIComponent(q),{same:true});return "Spotify düğmesi ekranda; kullanıcı dokunup oynatmalı.";}
+    if(p==="apple_music"||p==="music"){addAction("🎵 MÜZİK: "+q,"https://music.apple.com/search?term="+encodeURIComponent(q));return "Müzik düğmesi ekranda; kullanıcı dokunup oynatmalı.";}
+    return await youtube(q);}
+  case "get_youtube_channel_report":return await ytReport(s(a.handle),a.video_limit);
+  case "toggle_webcam":{
+    if(s(a.action).toLowerCase()==="stop"){stopCam();return "Kamera akışı durduruldu."}
+    const ok=await startCam();return ok?"Kamera akışı başlatıldı — artık görebiliyorum.":"Kamera açılamadı (izin verilmemiş olabilir).";}
+  case "save_memory":{
+    const cat=s(a.category)||"notes",k=s(a.key),v=s(a.value);if(!k||!v)return "Anahtar ve değer gerekli.";
+    const m=loadMem();(m[cat]=m[cat]||{})[k]={value:v};saveMem(m);return "ok";}
+  case "delete_memory":return deleteMem(s(a.category),s(a.key),s(a.match_text));
+  case "save_whatsapp_contact":{
+    const nm=s(a.display_name),ph=normPhone(a.phone_number);if(!nm||!ph)return "Kişi adı ve telefon numarası gerekli.";
+    const m=loadMem();(m.whatsapp_contacts=m.whatsapp_contacts||{})[norm(nm)]={display_name:nm,value:"+"+ph,aliases:s(a.aliases).split(",").map(x=>x.trim()).filter(Boolean)};
+    saveMem(m);return `${nm} WhatsApp kişilerine kaydedildi.`;}
+  case "send_whatsapp_message":{
+    const msg=s(a.message);if(!msg)return "Mesaj içeriği gerekli.";
+    let ph=normPhone(a.phone_number);
+    if(!ph&&s(a.recipient_name)){const sv=waNumber(a.recipient_name);if(sv)ph=normPhone(sv);
+      else return `"${a.recipient_name}" için kayıtlı numara yok. Kullanıcıdan numarasını iste, save_whatsapp_contact ile kaydet.`;}
+    const url=`https://wa.me/${ph}?text=${encodeURIComponent(msg)}`;
+    addAction("💬 WHATSAPP'TA AÇ"+(a.recipient_name?": "+a.recipient_name:""),url);
+    return "WhatsApp taslağı düğmesi ekranda; kullanıcı dokunup Gönder'e basmalı.";}
+  }
+  return "Bu araç web sürümünde yok: "+name;
+}
+
+async function youtube(q){
+  if(!q)return "Arama ifadesi belirtilmedi.";const key=LS.get("yt_key");
+  if(key){try{const r=await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(q)}&key=${key}`);
+    const j=await r.json();const it=j.items&&j.items[0];
+    if(it){addAction("▶ YOUTUBE: "+it.snippet.title.slice(0,40),"https://www.youtube.com/watch?v="+it.id.videoId);return `YouTube'da bulundu: ${it.snippet.title}. Düğme ekranda.`}}catch{}}
+  addAction("▶ YOUTUBE'DA ARA: "+q,"https://www.youtube.com/results?search_query="+encodeURIComponent(q));return "YouTube arama düğmesi ekranda.";
+}
+async function ytReport(handle,limit){
+  const key=LS.get("yt_key");if(!key)return "YouTube API anahtarı yok. ⚙︎ ayarlardan ekleyebilirsin.";
+  let h=handle||LS.get("yt_handle");if(!h)return "Kanal handle'ı belirtilmedi; ayarlardan ekleyebilirsin.";
+  const m=h.match(/youtube\.com\/(?:@|channel\/)?([^\/?#]+)/);if(m)h=m[1];
+  const isId=/^UC[\w-]{22}$/.test(h);const g=async(p,q)=>(await fetch(`https://www.googleapis.com/youtube/v3/${p}?${new URLSearchParams({...q,key})}`)).json();
+  try{
+    const c=(await g("channels",{part:"snippet,statistics,contentDetails",...(isId?{id:h}:{forHandle:h.startsWith("@")?h:"@"+h})})).items?.[0];
+    if(!c)return "Kanal bulunamadı veya API anahtarı geçersiz.";
+    const n=x=>Number(x||0).toLocaleString("tr-TR");let out=`${c.snippet.title}: ${n(c.statistics.subscriberCount)} abone, ${n(c.statistics.viewCount)} toplam izlenme, ${n(c.statistics.videoCount)} video.`;
+    const up=c.contentDetails.relatedPlaylists.uploads;
+    const pl=(await g("playlistItems",{part:"contentDetails",playlistId:up,maxResults:String(Math.min(Math.max(+limit||6,1),15))})).items||[];
+    const ids=pl.map(i=>i.contentDetails.videoId).join(",");
+    if(ids){const vs=(await g("videos",{part:"snippet,statistics",id:ids})).items||[];
+      out+=" Son videolar — "+vs.map(v=>`${v.snippet.title}: ${n(v.statistics.viewCount)} izlenme, ${n(v.statistics.likeCount)} beğeni, ${n(v.statistics.commentCount)} yorum`).join("; ")+".";}
+    return out;
+  }catch(e){return "YouTube raporu alınamadı: "+e.message}
+}
+
+/* ───────── Ses çalma (24 kHz PCM16) ───────── */
+function b64ToBuf(b){const bin=atob(b),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u.buffer}
+function bufToB64(u8){let s="";for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s)}
+function outCtx(){
+  if(!S.ctxOut)S.ctxOut=new (window.AudioContext||window.webkitAudioContext)({sampleRate:24000});
+  if(S.ctxOut.state==="suspended")S.ctxOut.resume();return S.ctxOut;
+}
+function playChunk(buf){
+  const ctx=outCtx();const i16=new Int16Array(buf);if(!i16.length)return;
+  const f=new Float32Array(i16.length);let pk=0;
+  for(let i=0;i<i16.length;i++){f[i]=i16[i]/32768;const a=Math.abs(f[i]);if(a>pk)pk=a}
+  S.outLevel=Math.max(S.outLevel,pk);
+  const ab=ctx.createBuffer(1,f.length,24000);ab.copyToChannel(f,0);
+  const src=ctx.createBufferSource();src.buffer=ab;src.connect(ctx.destination);
+  const now=ctx.currentTime;if(S.nextT<now)S.nextT=now+0.04;
+  src.start(S.nextT);S.nextT+=ab.duration;S.srcs.push(src);S.speaking=true;
+  src.onended=()=>{const i=S.srcs.indexOf(src);if(i>=0)S.srcs.splice(i,1);if(!S.srcs.length){S.speaking=false;S.nextT=0}};
+}
+function flushPlayback(){for(const x of S.srcs){try{x.stop()}catch{}}S.srcs=[];S.nextT=0;S.speaking=false}
+
+/* ───────── Mikrofon (AudioWorklet, 16 kHz PCM16) ───────── */
+const WORKLET=`class P extends AudioWorkletProcessor{constructor(){super();this.r=sampleRate/16000;this.pos=0;this.prev=0;this.o=new Int16Array(1024);this.n=0}
+process(i){const x=i[0]&&i[0][0];if(!x||!x.length)return true;let p=this.pos;
+while(p<x.length){const k=Math.floor(p),f=p-k,a=k===0?this.prev:x[k-1],b=x[k];let v=Math.max(-1,Math.min(1,a+(b-a)*f));
+this.o[this.n++]=v<0?v*32768:v*32767;if(this.n>=1024){this.port.postMessage(this.o.slice(0,this.n));this.n=0}p+=this.r}
+this.pos=p-x.length;this.prev=x[x.length-1];return true}}registerProcessor('pcm-capture',P)`;
+async function startMic(){
+  if(S.micOn)return true;
+  try{S.micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}
+  catch{addLog("s","Mikrofon izni verilmedi. Safari ayarlarından izin ver.");return false}
+  S.ctxIn=new (window.AudioContext||window.webkitAudioContext)();if(S.ctxIn.state==="suspended")await S.ctxIn.resume();
+  const url=URL.createObjectURL(new Blob([WORKLET],{type:"application/javascript"}));
+  await S.ctxIn.audioWorklet.addModule(url);
+  const src=S.ctxIn.createMediaStreamSource(S.micStream);
+  S.node=new AudioWorkletNode(S.ctxIn,"pcm-capture");
+  S.node.port.onmessage=e=>{if(!S.ready)return;const i16=e.data;
+    sendJ({realtimeInput:{audio:{data:bufToB64(new Uint8Array(i16.buffer,i16.byteOffset,i16.byteLength)),mimeType:"audio/pcm;rate=16000"}}})};
+  src.connect(S.node);const z=S.ctxIn.createGain();z.gain.value=0;S.node.connect(z).connect(S.ctxIn.destination);
+  outCtx();S.micOn=true;$("btn-mic").className="ctl on";$("btn-mic").textContent="🔴 MIC ON";
+  if(S.ready)setStatus("DİNLİYORUM","live");return true;
+}
+function stopMic(){
+  if(S.micStream)S.micStream.getTracks().forEach(t=>t.stop());
+  try{S.node&&S.node.disconnect()}catch{}try{S.ctxIn&&S.ctxIn.close()}catch{}
+  S.micStream=S.node=S.ctxIn=null;S.micOn=false;$("btn-mic").className="ctl";$("btn-mic").textContent="🎙️ MIC";
+  if(S.ready)setStatus("HAZIR","live");
+}
+
+/* ───────── Kamera ───────── */
+async function startCam(){
+  stopCam(true);
+  try{S.camStream=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},facingMode:S.facing},audio:false})}
+  catch{addLog("s","Kamera izni verilmedi.");return false}
+  const v=$("cam");v.srcObject=S.camStream;$("cam-wrap").classList.remove("hidden");
+  const cv=document.createElement("canvas");
+  S.camTimer=setInterval(()=>{
+    if(!S.ready||!v.videoWidth)return;const sc=Math.min(1,768/Math.max(v.videoWidth,v.videoHeight));
+    cv.width=Math.round(v.videoWidth*sc);cv.height=Math.round(v.videoHeight*sc);
+    cv.getContext("2d").drawImage(v,0,0,cv.width,cv.height);
+    sendJ({realtimeInput:{video:{data:cv.toDataURL("image/jpeg",0.6).split(",")[1],mimeType:"image/jpeg"}}});
+  },1500);
+  S.camOn=true;$("btn-cam").className="ctl on";$("btn-cam").textContent="🔴 CAM ON";return true;
+}
+function stopCam(quiet){
+  clearInterval(S.camTimer);if(S.camStream)S.camStream.getTracks().forEach(t=>t.stop());
+  S.camTimer=S.camStream=null;S.camOn=false;$("cam").srcObject=null;$("cam-wrap").classList.add("hidden");
+  $("btn-cam").className="ctl";$("btn-cam").textContent="📷 CAM";
+}
+
+/* ───────── Orb ───────── */
+const oc=$("orb"),ox=oc.getContext("2d");let tick=0;
+function drawOrb(){
+  tick++;const dpr=window.devicePixelRatio||1,W=oc.clientWidth,H=oc.clientHeight;
+  if(oc.width!==Math.round(W*dpr)){oc.width=Math.round(W*dpr);oc.height=Math.round(H*dpr)}
+  ox.setTransform(dpr,0,0,dpr,0,0);ox.clearRect(0,0,W,H);
+  const cx=W/2,cy=H/2;S.outLevel*=0.92;const base=Math.min(W,H)*0.28;
+  const pulse=S.speaking?1+0.10*Math.sin(tick*0.25)+S.outLevel*0.25:1+0.02*Math.sin(tick*0.06);const r=base*pulse;
+  const col=S.fatal?"255,77,77":"0,212,196";
+  const g=ox.createRadialGradient(cx,cy,r*0.2,cx,cy,r*1.9);g.addColorStop(0,`rgba(${col},${S.speaking?0.35+S.outLevel*0.3:0.18})`);g.addColorStop(1,`rgba(${col},0)`);
+  ox.fillStyle=g;ox.beginPath();ox.arc(cx,cy,r*1.9,0,7);ox.fill();
+  ox.strokeStyle=`rgba(${col},0.9)`;ox.lineWidth=2;ox.beginPath();ox.arc(cx,cy,r,0,7);ox.stroke();
+  for(const [rr,sp,len] of [[1.25,0.013,1.4],[1.45,-0.009,0.9]]){const a=tick*sp;ox.strokeStyle=`rgba(${col},0.35)`;ox.lineWidth=1.5;
+    ox.beginPath();ox.arc(cx,cy,r*rr,a,a+len);ox.stroke();ox.beginPath();ox.arc(cx,cy,r*rr,a+Math.PI,a+Math.PI+len);ox.stroke()}
+  for(let i=0;i<5;i++){const an=tick*0.02+i*Math.PI*2/5;ox.fillStyle=`rgba(${col},0.7)`;ox.beginPath();ox.arc(cx+Math.cos(an)*r*0.55,cy+Math.sin(an)*r*0.55,2,0,7);ox.fill()}
+  requestAnimationFrame(drawOrb);
+}
+drawOrb();
+
+/* ───────── Ayarlar / başlatma ───────── */
+function openSetup(){
+  $("k-gem").value=LS.get("gemini_key");$("k-voice").value=LS.get("voice","Charon");$("k-city").value=LS.get("city","Istanbul");
+  $("k-yt").value=LS.get("yt_key");$("k-ythandle").value=LS.get("yt_handle");
+  $("close").classList.toggle("hidden",!LS.get("gemini_key"));$("setup").classList.remove("hidden");
+}
+$("gear").onclick=openSetup;
+$("close").onclick=()=>$("setup").classList.add("hidden");
+$("clr").onclick=()=>{if(confirm("Kalıcı hafızadaki her şey silinsin mi?")){LS.set("jarvis_mem","{}");alert("Hafıza temizlendi.")}};
+$("go").onclick=async()=>{   // kullanıcı dokunuşu: ses bağlamlarını burada açmak iOS için şart
+  const k=$("k-gem").value.trim();if(!k){$("k-gem").focus();return}
+  LS.set("gemini_key",k);LS.set("voice",$("k-voice").value);LS.set("city",$("k-city").value.trim()||"Istanbul");
+  LS.set("yt_key",$("k-yt").value.trim());LS.set("yt_handle",$("k-ythandle").value.trim());
+  $("setup").classList.add("hidden");outCtx();
+  try{if("wakeLock" in navigator)S.wake=await navigator.wakeLock.request("screen")}catch{}
+  connect();await startMic();
+};
+$("btn-mic").onclick=()=>S.micOn?stopMic():startMic();
+$("btn-cam").onclick=()=>S.camOn?stopCam():startCam();
+$("flip").onclick=()=>{S.facing=S.facing==="user"?"environment":"user";startCam()};
+$("tf").onsubmit=e=>{e.preventDefault();const t=$("ti").value.trim();if(!t||!S.ready)return;
+  addLog("u",t);outCtx();sendJ({clientContent:{turns:[{role:"user",parts:[{text:t}]}],turnComplete:true}});$("ti").value=""};
+document.addEventListener("visibilitychange",async()=>{
+  if(document.visibilityState==="visible"&&S.want){
+    try{if("wakeLock" in navigator&&!S.wake)S.wake=await navigator.wakeLock.request("screen")}catch{}
+    if(S.ctxOut&&S.ctxOut.state!=="running")S.ctxOut.resume();
+    if(!S.ws||S.ws.readyState>1)connect();
+  }
+});
+if(!LS.get("gemini_key"))openSetup();
+</script>
+</body>
+</html>
